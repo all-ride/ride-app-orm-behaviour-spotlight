@@ -21,7 +21,7 @@ class SpotlightBehaviour extends AbstractBehaviour {
      */
     public function preInsert(Model $model, $entry) {
         if ($entry->getInSpotlight()) {
-            $entry->saveSpotlight = true;
+            $entry->saveSpotlight = 1;
         }
     }
 
@@ -33,7 +33,7 @@ class SpotlightBehaviour extends AbstractBehaviour {
      */
     public function preUpdate(Model $model, $entry) {
         if (!isset($entry->saveSpotlight) && $entry instanceof EntryProxy && $entry->isValueLoaded('inSpotlight') && ($entry->getInSpotlight() != $entry->getLoadedValues('inSpotlight'))) {
-            $entry->saveSpotlight = true;
+            $entry->saveSpotlight = 1;
         }
     }
 
@@ -54,7 +54,7 @@ class SpotlightBehaviour extends AbstractBehaviour {
      * @return null;
      */
     public function postUpdate(Model $model, $entry) {
-        $this->processSpotlight($model, $entry);
+            $this->processSpotlight($model, $entry);
     }
 
     /**
@@ -64,9 +64,13 @@ class SpotlightBehaviour extends AbstractBehaviour {
      * @return null
      */
     public function processSpotlight(Model $model, $entry) {
-        if (!$entry->saveSpotlight) {
+        if (!isset($entry->saveSpotlight) || $entry->saveSpotlight <> 1) {
             return;
         }
+
+        // saveSpotlight is immediately set on 2 (which means processed).
+        // this way entries don't get saved and processed twice.
+        $entry->saveSpotlight = 2;
 
         $spotlightMaximum = $model->getMeta()->getOption('behaviour.spotlight');
 
@@ -80,7 +84,6 @@ class SpotlightBehaviour extends AbstractBehaviour {
             ),
         ));
 
-
         $entry->setSpotlightWeight(1);
         $model->save($entry);
 
@@ -90,8 +93,10 @@ class SpotlightBehaviour extends AbstractBehaviour {
                 continue;
             }
 
+            $spotlightEntry->saveSpotlight = 2;
+
             if ($weight > intval($spotlightMaximum)) {
-                $spotlightEntry->setInSpotlight(false);
+                $spotlightEntry->setInSpotlight(0);
                 $spotlightEntry->setSpotlightWeight(null);
             } else {
                 $spotlightEntry->setSpotlightWeight($weight);
@@ -102,7 +107,6 @@ class SpotlightBehaviour extends AbstractBehaviour {
             $weight++;
         }
 
-        unset($entry->saveSpotlight);
     }
 
 }
