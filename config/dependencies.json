@@ -3,7 +3,7 @@
         {
             "interfaces": "ride\\library\\orm\\model\\behaviour\\initializer\\BehaviourInitializer",
             "class": "ride\\application\\orm\\model\\behaviour\\initializer\\SpotlightBehaviourInitializer",
-            "id": "spotlight.behaviour.initializer"
+            "id": "spotlight"
         }
     ]
 }

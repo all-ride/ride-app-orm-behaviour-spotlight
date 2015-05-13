@@ -8,7 +8,8 @@ use ride\library\orm\entry\EntryProxy;
 
 /**
  * Behaviour which allows to place a sole entry in the spotlight.
- * If an entry is placed in the spotlight, the previous spotlighted entry will be taken out of the spotlight.
+ * If an entry is placed in the spotlight, the previous spotlighted entry will
+ * be taken out of the spotlight.
  */
 class SpotlightBehaviour extends AbstractBehaviour {
 
@@ -31,8 +32,7 @@ class SpotlightBehaviour extends AbstractBehaviour {
      * @return null;
      */
     public function preUpdate(Model $model, $entry) {
-        if ($entry instanceof EntryProxy && $entry->isValueLoaded('inSpotlight') && ($entry->getInSpotlight() != $entry->getLoadedValues('inSpotlight'))
-        && ($entry->getSpotlightWeight() == $entry->getLoadedValues('spotlightWeight'))) {
+        if (!isset($entry->saveSpotlight) && $entry instanceof EntryProxy && $entry->isValueLoaded('inSpotlight') && ($entry->getInSpotlight() != $entry->getLoadedValues('inSpotlight'))) {
             $entry->saveSpotlight = true;
         }
     }
@@ -67,9 +67,11 @@ class SpotlightBehaviour extends AbstractBehaviour {
         if (!$entry->saveSpotlight) {
             return;
         }
-        unset($entry->saveSpotlight);
 
-        //Adjust all spotlight weights and remove the furthest entry from the spotlight when the maximum number of entries is reached
+        $spotlightMaximum = $model->getMeta()->getOption('behaviour.spotlight');
+
+        // adjust all spotlight weights and remove the furthest entry from the
+        // spotlight when the maximum number of entries is reached
         $entries = $model->find(array(
             'filter' => array('inSpotlight' => 1),
             'order' => array(
@@ -78,10 +80,10 @@ class SpotlightBehaviour extends AbstractBehaviour {
             ),
         ));
 
-        $options = $model->getMeta()->getOptions();
-        $spotlightMaximum = $options['behaviour.spotlight'];
+
         $entry->setSpotlightWeight(1);
         $model->save($entry);
+
         $weight = 2;
         foreach ($entries as $spotlightEntry) {
             if ($spotlightEntry->getId() == $entry->getId()) {
@@ -99,6 +101,8 @@ class SpotlightBehaviour extends AbstractBehaviour {
 
             $weight++;
         }
+
+        unset($entry->saveSpotlight);
     }
 
 }
