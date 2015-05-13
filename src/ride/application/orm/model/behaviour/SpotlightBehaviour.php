@@ -54,7 +54,7 @@ class SpotlightBehaviour extends AbstractBehaviour {
      * @return null;
      */
     public function postUpdate(Model $model, $entry) {
-            $this->processSpotlight($model, $entry);
+        $this->processSpotlight($model, $entry);
     }
 
     /**
@@ -106,7 +106,6 @@ class SpotlightBehaviour extends AbstractBehaviour {
 
             $weight++;
         }
-
     }
 
 }
