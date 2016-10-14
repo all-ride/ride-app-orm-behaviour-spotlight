@@ -2,12 +2,13 @@
 
 namespace ride\application\orm\model\behaviour\initializer;
 
+use ride\application\orm\model\behaviour\SpotlightBehaviour;
+
 use ride\library\generator\CodeClass;
 use ride\library\generator\CodeGenerator;
+use ride\library\orm\definition\field\PropertyField;
 use ride\library\orm\definition\ModelTable;
 use ride\library\orm\model\behaviour\initializer\BehaviourInitializer;
-use ride\library\orm\definition\field\PropertyField;
-use ride\application\orm\model\behaviour\SpotlightBehaviour;
 
 /**
  * Setup the spotlight behaviour based on the model fields
