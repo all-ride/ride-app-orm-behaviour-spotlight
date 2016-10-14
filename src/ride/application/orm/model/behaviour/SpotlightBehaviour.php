@@ -8,7 +8,8 @@ use ride\library\orm\entry\EntryProxy;
 
 /**
  * Behaviour which allows to place a sole entry in the spotlight.
- * If an entry is placed in the spotlight, the previous spotlighted entry will be taken out of the spotlight.
+ * If an entry is placed in the spotlight, the previous spotlighted entry will
+ * be taken out of the spotlight.
  */
 class SpotlightBehaviour extends AbstractBehaviour {
 
@@ -20,7 +21,7 @@ class SpotlightBehaviour extends AbstractBehaviour {
      */
     public function preInsert(Model $model, $entry) {
         if ($entry->getInSpotlight()) {
-            $entry->saveSpotlight = true;
+            $entry->saveSpotlight = 1;
         }
     }
 
@@ -31,9 +32,8 @@ class SpotlightBehaviour extends AbstractBehaviour {
      * @return null;
      */
     public function preUpdate(Model $model, $entry) {
-        if ($entry instanceof EntryProxy && $entry->isValueLoaded('inSpotlight') && ($entry->getInSpotlight() != $entry->getLoadedValues('inSpotlight'))
-        && ($entry->getSpotlightWeight() == $entry->getLoadedValues('spotlightWeight'))) {
-            $entry->saveSpotlight = true;
+        if (!isset($entry->saveSpotlight) && $entry instanceof EntryProxy && $entry->isValueLoaded('inSpotlight') && ($entry->getInSpotlight() != $entry->getLoadedValues('inSpotlight'))) {
+            $entry->saveSpotlight = 1;
         }
     }
 
@@ -64,12 +64,18 @@ class SpotlightBehaviour extends AbstractBehaviour {
      * @return null
      */
     public function processSpotlight(Model $model, $entry) {
-        if (!$entry->saveSpotlight) {
+        if (!isset($entry->saveSpotlight) || $entry->saveSpotlight <> 1) {
             return;
         }
-        unset($entry->saveSpotlight);
 
-        //Adjust all spotlight weights and remove the furthest entry from the spotlight when the maximum number of entries is reached
+        // saveSpotlight is immediately set on 2 (which means processed).
+        // this way entries don't get saved and processed twice.
+        $entry->saveSpotlight = 2;
+
+        $spotlightMaximum = $model->getMeta()->getOption('behaviour.spotlight');
+
+        // adjust all spotlight weights and remove the furthest entry from the
+        // spotlight when the maximum number of entries is reached
         $entries = $model->find(array(
             'filter' => array('inSpotlight' => 1),
             'order' => array(
@@ -78,18 +84,19 @@ class SpotlightBehaviour extends AbstractBehaviour {
             ),
         ));
 
-        $options = $model->getMeta()->getOptions();
-        $spotlightMaximum = $options['behaviour.spotlight'];
         $entry->setSpotlightWeight(1);
         $model->save($entry);
+
         $weight = 2;
         foreach ($entries as $spotlightEntry) {
             if ($spotlightEntry->getId() == $entry->getId()) {
                 continue;
             }
 
+            $spotlightEntry->saveSpotlight = 2;
+
             if ($weight > intval($spotlightMaximum)) {
-                $spotlightEntry->setInSpotlight(false);
+                $spotlightEntry->setInSpotlight(0);
                 $spotlightEntry->setSpotlightWeight(null);
             } else {
                 $spotlightEntry->setSpotlightWeight($weight);

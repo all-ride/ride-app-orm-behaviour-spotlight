@@ -2,15 +2,16 @@
 
 namespace ride\application\orm\model\behaviour\initializer;
 
-use ride\library\generator\CodeClass;
-use ride\library\generator\CodeGenerator;
-use ride\library\orm\definition\ModelTable;
-use ride\library\orm\model\behaviour\initializer\BehaviourInitializer;
-use ride\library\orm\definition\field\PropertyField;
 use ride\application\orm\model\behaviour\SpotlightBehaviour;
 
+use ride\library\generator\CodeClass;
+use ride\library\generator\CodeGenerator;
+use ride\library\orm\definition\field\PropertyField;
+use ride\library\orm\definition\ModelTable;
+use ride\library\orm\model\behaviour\initializer\BehaviourInitializer;
+
 /**
- * Setup the unique behaviours based on the model fields
+ * Setup the spotlight behaviour based on the model fields
  */
 class SpotlightBehaviourInitializer implements BehaviourInitializer {
 
@@ -21,40 +22,41 @@ class SpotlightBehaviourInitializer implements BehaviourInitializer {
      * @see \ride\library\orm\model\behaviour\Behaviour
      */
     public function getBehavioursForModel(ModelTable $modelTable) {
-        $spotLightMaximum = $modelTable->getOption('behaviour.spotlight');
-        if (!$spotLightMaximum) {
+        $spotlightMaximum = $modelTable->getOption('behaviour.spotlight');
+        if (!$spotlightMaximum || !is_numeric($spotlightMaximum) || $spotlightMaximum <= 0) {
             return array();
         }
 
         if (!$modelTable->hasField('inSpotlight')) {
-            $isSpotLightField = new PropertyField('inSpotlight', 'boolean');
-
             $options = array(
-                'label.name' => 'label.in.the.spotlight',
-                'label.description' => 'label.in.the.spotlight.description'
+                'label.name' => 'label.spotlight',
+                'label.description' => 'label.spotlight.description'
             );
 
-            //If tabs are used, add a new tab 'visibility' and use this tab for the spotlight checkbox
-            if ($tabs = $modelTable->getOption('scaffold.form.tabs')) {
+            // if tabs are used, add a new tab 'visibility' and use this tab for
+            // the spotlight checkbox
+            $tabs = $modelTable->getOption('scaffold.form.tabs');
+            if ($tabs) {
                 $options['scaffold.form.tab'] = 'visibility';
 
-                //Add the tab if it isn't available yet
-                $tabArray = explode(',', $tabs);
+                // add the tab if it isn't available yet
+                $tabArray = explode(',', str_replace(' ', '', $tabs));
                 if (!in_array('visiblity', $tabArray)) {
                     $tabs .= ',visibility';
                     $modelTable->setOption('scaffold.form.tabs', $tabs);
                 }
-
             }
-            $isSpotLightField->setOptions($options);
 
-            $spotLightWeightField = new PropertyField('spotlightWeight', 'integer');
-            $spotLightWeightField->setOptions(array(
+            $inSpotlightField = new PropertyField('inSpotlight', 'boolean');
+            $inSpotlightField->setOptions($options);
+
+            $spotlightWeightField = new PropertyField('spotlightWeight', 'integer');
+            $spotlightWeightField->setOptions(array(
                 'scaffold.form.omit' => '1'
             ));
 
-            $modelTable->addField($isSpotLightField);
-            $modelTable->addField($spotLightWeightField);
+            $modelTable->addField($inSpotlightField);
+            $modelTable->addField($spotlightWeightField);
         }
 
         return array(new SpotLightBehaviour());
@@ -71,4 +73,5 @@ class SpotlightBehaviourInitializer implements BehaviourInitializer {
     public function generateEntryClass(ModelTable $modelTable, CodeGenerator $generator, CodeClass $class) {
 
     }
+
 }
